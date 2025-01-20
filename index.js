@@ -4,7 +4,7 @@ const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 const corsOptions = {
-  origin: ["http://localhost:5173"],
+  origin: ["http://localhost:5173", "https://product-hunt-cli.vercel.app/"],
   credentials: true,
   operationSuccessStatus: 200,
 };
@@ -100,12 +100,7 @@ async function run() {
       const result = await productsCollection.deleteOne(query);
       res.send(result);
     });
-
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
   } finally {
-    // Ensures that the client will close when you finish/error
   }
 }
 run().catch(console.dir);
