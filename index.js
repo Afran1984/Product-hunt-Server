@@ -1,20 +1,18 @@
+const { MongoClient, ServerApiVersion } = require("mongodb");
 const express = require("express");
 const cors = require("cors");
-const fs = require("fs");
-const path = require("path");
 require("dotenv").config();
-const app = express();
 const port = process.env.PORT || 5000;
-
-app.use(express.json());
-
 const corsOptions = {
   origin: ["http://localhost:5173"],
   credentials: true,
+  operationSuccessStatus: 200,
 };
+
+const app = express();
+app.use(express.json());
 app.use(cors(corsOptions));
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
 const uri =
   "mongodb+srv://producthunt:bqfUxChuyzS5TnAD@cluster0.bqiq2nz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
@@ -74,8 +72,12 @@ async function run() {
 
     app.post("/product", async (req, res) => {
       const product = req.body;
-      const result = await productsCollection.insertOne(product);
-      res.send(result);
+      try {
+        const result = await productsCollection.insertOne(product);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ error: "Failed to add product" });
+      }
     });
 
     app.get("/products", async (req, res) => {
@@ -83,7 +85,6 @@ async function run() {
       res.send(result);
     });
 
-    await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
