@@ -1,12 +1,12 @@
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
-const path = require("path")
+const path = require("path");
 require("dotenv").config();
 const app = express();
-const port = process.env.POST || 5000;
-app.use(express.json());
+const port = process.env.PORT || 5000;
 
+app.use(express.json());
 
 const corsOptions = {
   origin: ["http://localhost:5173"],
@@ -14,9 +14,9 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const uri = "mongodb+srv://producthunt:bqfUxChuyzS5TnAD@cluster0.bqiq2nz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const { MongoClient, ServerApiVersion } = require("mongodb");
+const uri =
+  "mongodb+srv://producthunt:bqfUxChuyzS5TnAD@cluster0.bqiq2nz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -24,7 +24,7 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
 
 async function run() {
@@ -33,11 +33,12 @@ async function run() {
     await client.connect();
     const db = client.db("productHunt");
     const usersCollection = db.collection("user");
+    const productsCollection = db.collection("product");
 
-    app.get('/users', async(req, res) => {
+    app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     // Get user info by email
     app.get("/user/:email", async (req, res) => {
@@ -71,16 +72,26 @@ async function run() {
       res.send(result);
     });
 
+    app.post("/product", async (req, res) => {
+      const product = req.body;
+      const result = await productsCollection.insertOne(product);
+      res.send(result);
+    });
+
+    app.get("/products", async (req, res) => {
+      const result = await productsCollection.find().toArray();
+      res.send(result);
+    });
 
     await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
   } finally {
     // Ensures that the client will close when you finish/error
-    
   }
 }
 run().catch(console.dir);
-
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
