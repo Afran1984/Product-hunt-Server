@@ -1,18 +1,18 @@
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
-const path = require("path");
-
+const path = require("path")
+require("dotenv").config();
 const app = express();
-const port = 3300; // You can change the port number
-
-app.use(cors());
+const port = process.env.POST || 5000;
 app.use(express.json());
 
 
-// Password: mjL538g4i9QlTH0U
-// Name: Product-Hunt-admin
-
+const corsOptions = {
+  origin: ["http://localhost:5173"],
+  credentials: true,
+};
+app.use(cors(corsOptions));
 
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
@@ -31,62 +31,59 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    // Send a ping to confirm a successful connection
+    const db = client.db("productHunt");
+    const usersCollection = db.collection("user");
+
+    app.get('/users', async(req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result)
+    })
+
+    // Get user info by email
+    app.get("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await usersCollection.findOne({ email });
+      res.send(result);
+    });
+
+    app.put("/user", async (req, res) => {
+      const user = req.body;
+      const query = { email: user?.email };
+      const isExist = await usersCollection.findOne({ email: user?.email });
+      if (isExist) {
+        if (user?.status == "requested") {
+          const result = await usersCollection.updateOne(query, {
+            $set: { status: user?.status },
+          });
+          return res.send(result);
+        } else {
+          return res.send(isExist);
+        }
+      }
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          ...user,
+          timestamp: Date.now(),
+        },
+      };
+      const result = await usersCollection.updateOne(query, updateDoc, options);
+      res.send(result);
+    });
+
+
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
+    
   }
 }
 run().catch(console.dir);
 
 
-// Serve product data
-app.get("/api/products", (req, res) => {
-  // Read the product data from the JSON file
-  fs.readFile(path.join(__dirname, "Product.json"), "utf8", (err, data) => {
-    if (err) {
-      return res.status(500).json({ message: "Error reading data" });
-    }
-    const products = JSON.parse(data);
-
-    // Sort products by upvotes (descending order)
-    const sortedProducts = products.sort((a, b) => b.upvotes - a.upvotes);
-    
-    res.json(sortedProducts); // Send the sorted products as a response
-  });
-});
-
-// Handle upvote functionality
-app.post("/api/upvote/:id", (req, res) => {
-  const { id } = req.params;
-
-  // Read the product data from the JSON file
-  fs.readFile(path.join(__dirname, "Product.json"), "utf8", (err, data) => {
-    if (err) {
-      return res.status(500).json({ message: "Error reading data" });
-    }
-
-    const products = JSON.parse(data);
-
-    // Find the product by ID and increment the upvotes
-    const productIndex = products.findIndex((product) => product.id === parseInt(id));
-    if (productIndex !== -1) {
-      products[productIndex].upvotes += 1;
-
-      // Save the updated products back to the file
-      fs.writeFile(path.join(__dirname, "Product.json"), JSON.stringify(products, null, 2), (err) => {
-        if (err) {
-          return res.status(500).json({ message: "Error saving data" });
-        }
-
-        res.json({ message: "Upvote successful", product: products[productIndex] });
-      });
-    } else {
-      res.status(404).json({ message: "Product not found" });
-    }
-  });
+app.get("/", (req, res) => {
+  res.send("Hello World!");
 });
 
 // Start the server
