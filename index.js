@@ -30,7 +30,7 @@ async function run() {
   try {
     
     // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
+    await client.connect();
     const db = client.db("productHunt");
     const usersCollection = db.collection("user");
     const productsCollection = db.collection("product");
@@ -88,7 +88,7 @@ async function run() {
       res.send(result);
     });
 
-    // Get Single Blog
+    // Get Single product
     app.get("/product/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -96,14 +96,31 @@ async function run() {
       res.send(result);
     });
 
-    // Delete blog
+    //update product
+    app.put("/product/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const productInfo = req.body;
+      const options = {
+        upsert: true,
+      };
+      const updateDoc = {
+        $set: {
+          ...productInfo,
+        },
+      };
+      const result = await productsCollection.updateOne(query, updateDoc, options);
+      res.send(result);
+    });
+
+    // Delete product
     app.delete("/product/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await productsCollection.deleteOne(query);
       res.send(result);
     });
-    //  await client.db("admin").command({ ping: 1 });
+     await client.db("admin").command({ ping: 1 });
   } finally {
   }
 }
