@@ -13,7 +13,6 @@ const app = express();
 app.use(express.json());
 app.use(cors(corsOptions));
 
-
 const uri =
   "mongodb+srv://producthunt:bqfUxChuyzS5TnAD@cluster0.bqiq2nz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
@@ -28,13 +27,10 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
     const db = client.db("productHunt");
     const usersCollection = db.collection("user");
     const productsCollection = db.collection("product");
-    
 
     app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
@@ -73,6 +69,33 @@ async function run() {
       res.send(result);
     });
 
+    // updating role
+
+    // Update user role
+    app.patch("/user/role/:id", async (req, res) => {
+      const userId = req.params.id;
+      const { role } = req.body;
+      y;
+
+      try {
+        const updatedUser = await usersCollection.updateOne(
+          { _id: new ObjectId(userId) },
+          { $set: { role } }
+        );
+
+        if (updatedUser.modifiedCount === 0) {
+          return res
+            .status(404)
+            .json({ message: "User not found or role is the same." });
+        }
+
+        res.json({ success: true, message: "Role updated successfully!" });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to update role" });
+      }
+    });
+
     app.post("/product", async (req, res) => {
       const product = req.body;
       try {
@@ -109,7 +132,11 @@ async function run() {
           ...productInfo,
         },
       };
-      const result = await productsCollection.updateOne(query, updateDoc, options);
+      const result = await productsCollection.updateOne(
+        query,
+        updateDoc,
+        options
+      );
       res.send(result);
     });
 
@@ -120,7 +147,8 @@ async function run() {
       const result = await productsCollection.deleteOne(query);
       res.send(result);
     });
-     await client.db("admin").command({ ping: 1 });
+
+    await client.db("admin").command({ ping: 1 });
   } finally {
   }
 }
