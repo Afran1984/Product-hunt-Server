@@ -1,17 +1,18 @@
-const { MongoClient, ServerApiVersion } = require("mongodb");
 const express = require("express");
 const cors = require("cors");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
+
 const corsOptions = {
-  origin: ["http://localhost:5173", "https://product-hunt-cli.vercel.app/"],
+  origin: ["http://localhost:5173"],
   credentials: true,
   operationSuccessStatus: 200,
 };
-
 const app = express();
 app.use(express.json());
 app.use(cors(corsOptions));
+
 
 const uri =
   "mongodb+srv://producthunt:bqfUxChuyzS5TnAD@cluster0.bqiq2nz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
@@ -27,11 +28,13 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+    
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     const db = client.db("productHunt");
     const usersCollection = db.collection("user");
     const productsCollection = db.collection("product");
+    
 
     app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
@@ -100,6 +103,7 @@ async function run() {
       const result = await productsCollection.deleteOne(query);
       res.send(result);
     });
+    //  await client.db("admin").command({ ping: 1 });
   } finally {
   }
 }
